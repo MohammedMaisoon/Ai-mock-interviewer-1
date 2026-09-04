@@ -511,33 +511,40 @@
     }
 
     async function uploadResume(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
 
-      isResumeUploaded = true;
-      uploadedResumeName = file.name;
+  isResumeUploaded = true;
+  uploadedResumeName = file.name;
 
-      const formData = new FormData();
-      formData.append('data', file, file.name);
-      formData.append('sessionId', 'live-call-session');
-      formData.append('isResume', 'true');
-      formData.append('resumeUploaded', 'true');
+  const formData = new FormData();
+  formData.append('data', file, file.name);
+  formData.append('file', file, file.name); // Compatibility fallback for n8n
+  formData.append('sessionId', 'live-call-session');
+  formData.append('isResume', 'true');
+  formData.append('resumeUploaded', 'true');
 
-      appendMsg(`Uploading resume: ${file.name}...`, 'user');
+  appendMsg(`Uploading resume: ${file.name}...`, 'user');
 
-      try {
-        const res = await fetch(TEST_WEBHOOK_URL, { 
-          method: 'POST', 
-          body: formData 
-        });
-        const data = await res.json();
-        const reply = data.output || "Resume received! What job role or domain are you preparing for?";
-        appendMsg(reply, 'ai');
-        speakText(reply);
-      } catch (err) {
-        appendMsg("Failed to process resume.", 'ai');
-      }
+  try {
+    const res = await fetch(TEST_WEBHOOK_URL, { 
+      method: 'POST', 
+      body: formData 
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server status: ${res.status}`);
     }
+
+    const data = await res.json();
+    const reply = data.output || "Resume received! What job role or domain are you preparing for?";
+    appendMsg(reply, 'ai');
+    speakText(reply);
+  } catch (err) {
+    console.error("Upload error:", err);
+    appendMsg("Failed to process resume.", 'ai');
+  }
+}
 
     function appendMsg(text, sender) {
       const logs = document.getElementById('chatLogs');
