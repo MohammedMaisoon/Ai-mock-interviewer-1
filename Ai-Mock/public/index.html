@@ -32,7 +32,6 @@
       overflow: hidden;
     }
 
-    /* Teams-style top bar */
     .teams-navbar {
       height: 56px;
       background: #16171d;
@@ -109,7 +108,6 @@
       gap: 6px;
     }
 
-    /* Layout */
     .main-stage {
       flex: 1;
       display: grid;
@@ -119,7 +117,6 @@
       overflow: hidden;
     }
 
-    /* Video tile */
     .video-grid {
       position: relative;
       height: 100%;
@@ -149,7 +146,6 @@
       filter: saturate(1.02) contrast(1.02);
     }
 
-    /* subtle vignette so the UI chrome reads clearly over the photo */
     .human-container::after {
       content: "";
       position: absolute;
@@ -158,7 +154,6 @@
       pointer-events: none;
     }
 
-    /* speaking ring around the tile, Teams-style */
     .speaking-ring {
       position: absolute;
       inset: 10px;
@@ -190,18 +185,6 @@
       font-weight: 500;
     }
 
-    .mic-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.62rem;
-    }
-
-    /* Soundwave audio visualizer, replaces the "voice" indicator */
     .audio-waves {
       display: flex;
       align-items: flex-end;
@@ -247,7 +230,6 @@
     }
     .live-tag .rec-dot { width: 7px; height: 7px; }
 
-    /* Right sidebar */
     .sidebar {
       background: var(--panel-bg);
       border-radius: 12px;
@@ -351,7 +333,6 @@
 </head>
 <body>
 
-  <!-- Teams header -->
   <header class="teams-navbar">
     <div class="call-info">
       <div class="rec-dot"></div>
@@ -369,7 +350,6 @@
     </div>
   </header>
 
-  <!-- Main stage -->
   <main class="main-stage">
     <div class="video-grid" id="speakerCard">
       <div class="human-container">
@@ -391,7 +371,6 @@
       </div>
     </div>
 
-    <!-- Right sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <span>Transcript & Chat</span>
@@ -415,15 +394,15 @@
   </main>
 
   <script>
+    // Paste your full Production n8n Webhook URL here
     const TEST_WEBHOOK_URL = 'https://ai-mock-interviewer-1-2zng.onrender.com/webhook/mock-interview';
+    
     let isListening = false;
     let recognition;
 
-    // Persistent resume state
     let isResumeUploaded = false;
     let uploadedResumeName = "";
 
-    // Call timer, Teams-style
     let elapsed = 0;
     setInterval(() => {
       elapsed++;
@@ -498,53 +477,62 @@
       try {
         const res = await fetch(TEST_WEBHOOK_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify(payload)
         });
+
+        if (!res.ok) {
+          throw new Error(`HTTP Error Status: ${res.status}`);
+        }
+
         const data = await res.json();
         const reply = data.output || "Thank you. Let's move to the next question.";
         appendMsg(reply, 'ai');
         speakText(reply);
       } catch (err) {
-        appendMsg("Error connecting to server.", 'ai');
+        console.error("SendMessage Error:", err);
+        appendMsg(`Error connecting to server (${err.message})`, 'ai');
       }
     }
 
     async function uploadResume(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+      const file = e.target.files[0];
+      if (!file) return;
 
-  isResumeUploaded = true;
-  uploadedResumeName = file.name;
+      isResumeUploaded = true;
+      uploadedResumeName = file.name;
 
-  const formData = new FormData();
-  formData.append('data', file, file.name);
-  formData.append('file', file, file.name); // Compatibility fallback for n8n
-  formData.append('sessionId', 'live-call-session');
-  formData.append('isResume', 'true');
-  formData.append('resumeUploaded', 'true');
+      const formData = new FormData();
+      formData.append('data', file, file.name);
+      formData.append('file', file, file.name);
+      formData.append('sessionId', 'live-call-session');
+      formData.append('isResume', 'true');
+      formData.append('resumeUploaded', 'true');
 
-  appendMsg(`Uploading resume: ${file.name}...`, 'user');
+      appendMsg(`Uploading resume: ${file.name}...`, 'user');
 
-  try {
-    const res = await fetch(TEST_WEBHOOK_URL, { 
-      method: 'POST', 
-      body: formData 
-    });
+      try {
+        const res = await fetch(TEST_WEBHOOK_URL, { 
+          method: 'POST', 
+          body: formData 
+        });
 
-    if (!res.ok) {
-      throw new Error(`Server status: ${res.status}`);
+        if (!res.ok) {
+          throw new Error(`HTTP Error Status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        const reply = data.output || "Resume received! What job role or domain are you preparing for?";
+        appendMsg(reply, 'ai');
+        speakText(reply);
+      } catch (err) {
+        console.error("UploadResume Error:", err);
+        appendMsg(`Failed to process resume (${err.message})`, 'ai');
+      }
     }
-
-    const data = await res.json();
-    const reply = data.output || "Resume received! What job role or domain are you preparing for?";
-    appendMsg(reply, 'ai');
-    speakText(reply);
-  } catch (err) {
-    console.error("Upload error:", err);
-    appendMsg("Failed to process resume.", 'ai');
-  }
-}
 
     function appendMsg(text, sender) {
       const logs = document.getElementById('chatLogs');
