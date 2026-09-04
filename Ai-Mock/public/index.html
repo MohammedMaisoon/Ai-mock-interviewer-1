@@ -415,11 +415,15 @@
   </main>
 
   <script>
-    const TEST_WEBHOOK_URL = 'http://localhost:5678/webhook/mock-interview';
+    const TEST_WEBHOOK_URL = 'https://ai-mock-interviewer-1-2zng.onrender.com/webhook/mock-interview';
     let isListening = false;
     let recognition;
 
-    // call timer, Teams-style
+    // Persistent resume state
+    let isResumeUploaded = false;
+    let uploadedResumeName = "";
+
+    // Call timer, Teams-style
     let elapsed = 0;
     setInterval(() => {
       elapsed++;
@@ -484,11 +488,18 @@
       appendMsg(text, 'user');
       input.value = '';
 
+      const payload = {
+        chatInput: text,
+        sessionId: 'live-call-session',
+        resumeUploaded: isResumeUploaded,
+        resumeName: uploadedResumeName
+      };
+
       try {
         const res = await fetch(TEST_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chatInput: text, sessionId: 'live-call-session' })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         const reply = data.output || "Thank you. Let's move to the next question.";
@@ -503,16 +514,24 @@
       const file = e.target.files[0];
       if (!file) return;
 
+      isResumeUploaded = true;
+      uploadedResumeName = file.name;
+
       const formData = new FormData();
       formData.append('data', file, file.name);
       formData.append('sessionId', 'live-call-session');
+      formData.append('isResume', 'true');
+      formData.append('resumeUploaded', 'true');
 
       appendMsg(`Uploading resume: ${file.name}...`, 'user');
 
       try {
-        const res = await fetch(TEST_WEBHOOK_URL, { method: 'POST', body: formData });
+        const res = await fetch(TEST_WEBHOOK_URL, { 
+          method: 'POST', 
+          body: formData 
+        });
         const data = await res.json();
-        const reply = data.output || "Resume received! Let's discuss your experience.";
+        const reply = data.output || "Resume received! What job role or domain are you preparing for?";
         appendMsg(reply, 'ai');
         speakText(reply);
       } catch (err) {
