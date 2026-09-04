@@ -1,0 +1,12 @@
+{
+  "name": "teams-ai-mock-interviewer",
+  "version": "1.0.0",
+  "description": "Teams AI Mock Interviewer Web App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
