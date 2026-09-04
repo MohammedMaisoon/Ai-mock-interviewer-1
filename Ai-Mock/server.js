@@ -4,11 +4,12 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Serve files directly from the working directory
-app.use(express.static(__dirname));
+// 1. Serve static files from the 'public' subfolder
+app.use(express.static(path.join(__dirname, 'public')));
 
+// 2. Serve public/index.html for all incoming routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
@@ -26,4 +27,4 @@ setInterval(() => {
   }).on('error', (err) => {
     console.error('Self-ping failed:', err.message);
   });
-}, 14 * 60 * 1000); // 14 minutes
+}, 14 * 60 * 1000);
