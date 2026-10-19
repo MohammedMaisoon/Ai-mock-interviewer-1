@@ -394,8 +394,10 @@
   </main>
 
   <script>
-    // Paste your full Production n8n Webhook URL here
-    const TEST_WEBHOOK_URL = 'http://localhost:5678/webhook/mock-interview';
+    // Production n8n Webhook URL (your n8n service on Render). Replace YOUR-N8N-SERVICE:
+    const TEST_WEBHOOK_URL = 'https://my-n8n-hq4d.onrender.com/webhook/mock-interview';
+    // Unique session per page load so each interview has its own memory
+    const SESSION_ID = 'session-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
     
     let isListening = false;
     let recognition;
@@ -469,7 +471,7 @@
 
       const payload = {
         chatInput: text,
-        sessionId: 'live-call-session',
+        sessionId: SESSION_ID,
         resumeUploaded: isResumeUploaded,
         resumeName: uploadedResumeName
       };
@@ -508,7 +510,7 @@
       const formData = new FormData();
       formData.append('data', file, file.name);
       formData.append('file', file, file.name);
-      formData.append('sessionId', 'live-call-session');
+      formData.append('sessionId', SESSION_ID);
       formData.append('isResume', 'true');
       formData.append('resumeUploaded', 'true');
 
